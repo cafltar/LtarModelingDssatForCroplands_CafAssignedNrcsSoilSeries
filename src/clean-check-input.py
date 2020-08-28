@@ -59,6 +59,7 @@ def assign_id2_by_nearest_neighbor(
     df_out = pd.DataFrame(df_gpd)
     return df_out
 
+
 def near(grid_points, point, pts):
      # find the nearest point and return the corresponding Place value
      # From: https://gis.stackexchange.com/a/222388
@@ -76,33 +77,34 @@ def main(
     ## Data Transformation
     df_in = pd.read_excel(
         pathSoiSeries, 
-        sheet_name="Revised Series",
-        usecols=[0,1,2,6],
+        sheet_name="Sheet1",
+        usecols=[0,1,2,4],
         names=[
             "ID",
             "Easting",
             "Northing",
-            "Series"
+            "SeriesName"
         ],
         converters={
             "ID":int, 
             "Easting":float, 
             "Northing":float, 
-            "Series":int})
+            "SeriesName":str})
     
     georefPointsIn = gpd.read_file(pathGeorefPoints)
 
     df = (df_in
-        .pipe(assign_series_names)
         .pipe(convert_coord_to_wgs84)
         .pipe(assign_id2_by_nearest_neighbor, georefPointsIn)
         .sort_values(by="ID2")
     )
 
+    # QC: Checked that IDs match
+
     # Write files
     date_today = datetime.datetime.now().strftime("%Y%m%d")
 
-    df[["ID2", "SeriesName"]].to_csv(
+    df[["ID2", "SeriesName", "Latitude", "Longitude"]].to_csv(
         outputDir / "CookEastNrcsSoilSeries_{}_P1A1.csv".format(date_today),
         index = False)
 
@@ -111,7 +113,7 @@ def main(
 if __name__ == "__main__":
     # params
     inputDir = pathlib.Path.cwd() / "input"
-    inputWardellSoilSeries = inputDir / "Wardell Soil Series.xls"
+    inputWardellSoilSeries = inputDir / "CAF_soil_type.xls"
     inputPathGeorefPoints = inputDir / "cookeast_georeferencepoint_20190924.geojson"
     outputDir = pathlib.Path.cwd() / "output"
 
